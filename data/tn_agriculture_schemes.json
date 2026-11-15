@@ -1,0 +1,17 @@
+
+{
+  "schemes": [
+    {
+      "scheme_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+      "department": "Department of Agriculture and Farmers Welfare, Government of India",
+      "description": "A Central Sector Scheme that provides income support to eligible landholding farmer families to help meet agricultural input and domestic needs.",
+      "benefits_or_subsidy": "Rs. 6,000 per year per eligible farmer family, paid in three equal instalments of Rs. 2,000 through Direct Benefit Transfer.",
+      "eligibility": "Landholding farmer families with cultivable land recorded in their names, subject to the scheme's exclusion criteria. State and Union Territory governments identify eligible beneficiaries.",
+      "documents_required": "Official guidelines refer to farmer and family details, land records, Aadhaar or permitted identification details, and bank account number with IFSC. Confirm the current document requirements with the official portal.",
+      "application_process": "Use the official PM-KISAN portal for New Farmer Registration and beneficiary status. eKYC is mandatory for registered beneficiaries. Final eligibility and verification are handled under the official scheme process.",
+      "source_url": "https://pmkisan.gov.in/",
+      "guidelines_url": "https://pmkisan.gov.in/Documents/RevisedPM-KISANOperationalGuidelines%28English%29.pdf",
+      "last_verified": "2026-11-15"
+    }
+  ]
+}

@@ -1,5 +1,4 @@
 
-cat > app/rag.py <<'PY'
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
@@ -176,4 +175,3 @@ Provide a clear and concise answer.
     response = llm.invoke(prompt)
 
     return response.content
-PY
