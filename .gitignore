@@ -1,0 +1,22 @@
+
+# Python environment
+venv/
+__pycache__/
+*.py[cod]
+
+# API keys and secrets
+.env
+
+# Local vector database
+vectorstore/
+
+# Local datasets
+data/pdfs/*
+!data/pdfs/.gitkeep
+data/processed/*
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
