@@ -1,28 +1,35 @@
+cd ~/Buildathon/Farmers-RAG
+source venv/bin/activate
+
+cat > README.md <<'EOF'
 # Tamil Nadu Farmers AI Assistant
 
-An AI-powered agricultural government schemes assistant built using **Retrieval-Augmented Generation (RAG)**. The application helps farmers access information from government documents through a conversational interface in English and Tamil.
+A bilingual AI-powered agricultural information assistant built using Retrieval-Augmented Generation (RAG). The application helps farmers access information from government agricultural scheme documents through an interactive English and Tamil interface.
 
 ## Project Objective
 
-To make agricultural government scheme information easier to access by helping farmers understand:
+To make government agricultural scheme information easier to access by helping farmers understand:
 
 - Government agricultural schemes
 - Scheme benefits and financial assistance
 - Eligibility criteria
 - Required documents
 - Application procedures
+- Agricultural price support information
 
-The assistant retrieves information from an indexed knowledge base and generates responses using the retrieved government source content.
+The assistant retrieves relevant information from its indexed government knowledge base and generates context-grounded responses.
 
 ## Key Features
 
-- **Bilingual Question Answering:** Ask agricultural questions in English or Tamil.
-- **Government Document Retrieval:** Retrieve relevant information from indexed government documents.
-- **PDF Processing:** Extract and process information from government PDF documents.
-- **RAG Architecture:** Use FAISS vector search and large language models to generate context-based answers.
-- **Source Attribution:** Display source filenames and page references when available.
-- **Interactive Interface:** Simple Streamlit-based user interface.
-- **REST API:** FastAPI backend for question processing.
+- **Bilingual Question Answering:** Ask questions in English or Tamil.
+- **Government Document Retrieval:** Search indexed agricultural scheme information.
+- **PDF Processing:** Extract text and page references from government PDFs.
+- **RAG Architecture:** Use multilingual embeddings and FAISS vector search.
+- **AI-Powered Responses:** Generate answers using the OpenAI API.
+- **Source Attribution:** Display source documents, page references and official links when available.
+- **Unsupported Question Handling:** Avoid presenting unsupported information as fact.
+- **Interactive Interface:** Streamlit frontend.
+- **REST API:** FastAPI backend.
 
 ## Technology Stack
 
@@ -30,7 +37,7 @@ The assistant retrieves information from an indexed knowledge base and generates
 |---|---|
 | Python | Core programming language |
 | FastAPI | Backend API |
-| Streamlit | User interface |
+| Streamlit | Frontend interface |
 | LangChain | RAG orchestration |
 | FAISS | Vector database |
 | Sentence Transformers | Multilingual embeddings |
@@ -43,28 +50,28 @@ The assistant retrieves information from an indexed knowledge base and generates
 1. Farmer enters a question through the Streamlit interface.
 2. The frontend sends the question to the FastAPI backend.
 3. Tamil questions are translated into English for retrieval.
-4. The multilingual embedding model and FAISS vector database retrieve relevant document passages.
-5. Retrieved information is passed to the OpenAI language model.
-6. The assistant generates an answer using the retrieved context.
-7. The response and available source references are displayed to the farmer.
+4. The multilingual embedding model converts the question into a vector representation.
+5. FAISS retrieves relevant passages from the indexed government documents.
+6. Retrieved information is passed to the OpenAI language model.
+7. The assistant generates a response using the retrieved context.
+8. The answer and available government source references are displayed.
 
 ## Project Structure
 
 ```text
 Farmers-RAG/
 ├── app/
-│   ├── main.py
+│   ├── __init__.py
 │   ├── config.py
 │   ├── ingest.py
-│   ├── rag.py
-│   └── prompts.py
+│   ├── main.py
+│   ├── prompts.py
+│   └── rag.py
 ├── frontend/
 │   └── streamlit_app.py
 ├── data/
 │   ├── pdfs/
-│   ├── processed/
 │   └── tn_agriculture_schemes.json
-├── vectorstore/
 ├── tests/
 │   └── test_rag.py
 ├── screenshots/
@@ -72,11 +79,3 @@ Farmers-RAG/
 ├── .gitignore
 ├── requirements.txt
 └── README.md
-```
-
-## Setup and Installation
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/SriramRagz/farmers-rag-build

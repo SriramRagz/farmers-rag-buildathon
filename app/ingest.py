@@ -44,6 +44,11 @@ def extract_pdf_documents():
                                 page_content=text,
                                 metadata={
                                     "source": pdf_path.name,
+                                    "source_url": (
+                                        "https://www.stationeryprinting.tn.gov.in/extraordinary/2026/360_Ex_II_1_2026.pdf"
+                                        if pdf_path.name == "greengram_price_support_2026.pdf"
+                                        else ""
+                                    ),
                                     "page": page_number,
                                     "content_type": "pdf",
                                 },

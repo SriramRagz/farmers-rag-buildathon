@@ -146,6 +146,29 @@ hr {
     border-color: #DCE6D9;
 }
 
+
+/* Improve source text readability */
+.source-card,
+.source-card p,
+.source-card strong,
+.stMarkdown p,
+.stMarkdown strong {
+    color: #174D32 !important;
+}
+
+.stLinkButton a {
+    background-color: #24623E !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+}
+
+.stLinkButton a:hover {
+    background-color: #174D32 !important;
+    color: #FFFFFF !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -242,17 +265,13 @@ with st.form("farmer_question_form"):
 if submitted:
 
     if not question.strip():
-
         st.warning("Please enter a question before submitting.")
 
     else:
-
         with st.spinner(
             "Searching government documents and preparing your answer..."
         ):
-
             try:
-
                 response = requests.post(
                     API_URL,
                     json={
@@ -263,85 +282,89 @@ if submitted:
                 )
 
                 response.raise_for_status()
-
                 result = response.json()
 
                 answer = result.get("answer", "")
+                sources = result.get("sources", [])
 
                 st.markdown(
                     '<div class="section-heading">Assistant Response</div>',
                     unsafe_allow_html=True
                 )
 
-                # Escape HTML from generated answer before rendering.
-                # Preserve basic line breaks and paragraph formatting.
                 safe_answer = html.escape(str(answer))
-                safe_answer = safe_answer.replace("\n", "<br>")
-
-                # Separate source information from answer.
-                source_pattern = r"\(Source:\s*(.*?),\s*Page:\s*(.*?)\)"
-                source_match = re.search(source_pattern, str(answer))
-
-                if source_match:
-                    source_name = html.escape(source_match.group(1))
-                    source_page = html.escape(source_match.group(2))
-
-                    safe_answer = re.sub(
-                        source_pattern,
-                        "",
-                        safe_answer
-                    ).strip()
+                safe_answer = safe_answer.replace("\\n", "<br>")
 
                 st.markdown(
                     f'<div class="answer-card">{safe_answer}</div>',
                     unsafe_allow_html=True
                 )
 
-                if source_match:
+                # Display source references returned separately by FastAPI.
+                st.markdown(
+                    '<div class="section-heading">Government Sources</div>',
+                    unsafe_allow_html=True
+                )
 
-                    st.markdown(
-                        f"""
-                        <div class="source-card">
-                            <b>Source Document</b><br>
-                            {source_name}<br>
-                            <b>Page:</b> {source_page}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                if sources:
+                    for index, source in enumerate(sources):
+
+                        source_name = source.get(
+                            "name", "Government document"
+                        )
+                        source_url = source.get("url", "")
+                        source_file = source.get("file", "")
+                        source_page = source.get("page")
+
+                        with st.container():
+                            st.markdown(
+                                f"**{source_name}**"
+                            )
+
+                            if source_page is not None:
+                                st.caption(f"Page: {source_page}")
+
+                            if (
+                                isinstance(source_url, str)
+                                and source_url.startswith(("https://", "http://"))
+                            ):
+                                st.link_button(
+                                    "Open official source",
+                                    source_url,
+                                    key=f"government_source_{index}"
+                                )
+                            elif source_file:
+                                st.caption(f"Document: {source_file}")
+
+                            st.divider()
 
                 else:
-
-                    st.caption(
-                        "No separate source reference was returned. "
-                        "Please verify important information."
+                    st.info(
+                        "No source references were returned for this answer. "
+                        "Please verify important information with the "
+                        "relevant government department."
                     )
 
             except requests.exceptions.ConnectionError:
-
                 st.error(
                     "Cannot connect to the backend. "
                     "Please check whether FastAPI is running."
                 )
 
             except requests.exceptions.Timeout:
-
                 st.error(
                     "The request timed out. Please try again."
                 )
 
             except requests.exceptions.RequestException as error:
-
                 st.error(f"API request failed: {error}")
 
             except (KeyError, ValueError):
-
                 st.error(
                     "The backend returned an unexpected response."
                 )
 
 
-# =====================================================
 # ABOUT THE ASSISTANT
 # =====================================================
 

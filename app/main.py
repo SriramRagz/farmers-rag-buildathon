@@ -1,24 +1,20 @@
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.rag import answer_question
 
-# Create FastAPI application
 app = FastAPI(
     title="Tamil Nadu Farmers AI Assistant",
     description="An AI assistant that answers farmers' questions using government documents.",
-    version="1.0.0"
+    version="1.1.0"
 )
 
 
-# Define the request format
 class QuestionRequest(BaseModel):
     question: str
     language: str = "English"
 
 
-# Define the home endpoint
 @app.get("/")
 def home():
     return {
@@ -26,20 +22,15 @@ def home():
     }
 
 
-# Define the health check endpoint
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
 
 
-# Define the question-answering endpoint
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
-
     try:
-        answer = answer_question(
+        result = answer_question(
             question=request.question,
             language=request.language
         )
@@ -47,11 +38,12 @@ def ask_question(request: QuestionRequest):
         return {
             "question": request.question,
             "language": request.language,
-            "answer": answer
+            "answer": result["answer"],
+            "sources": result["sources"]
         }
 
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
     except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail=str(error)
-        )
+        raise HTTPException(status_code=500, detail=str(error))
