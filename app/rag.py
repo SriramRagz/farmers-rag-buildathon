@@ -1,4 +1,5 @@
 
+cat > app/rag.py <<'PY'
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
@@ -20,43 +21,67 @@ def load_vectorstore():
 
     if not index_file.exists():
         raise FileNotFoundError(
-            "FAISS index not found. Please run: python -m app.ingest"
+            "FAISS index not found. Run: python -m app.ingest"
         )
 
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL
     )
 
-    vectorstore = FAISS.load_local(
+    return FAISS.load_local(
         str(VECTORSTORE_DIR),
         embeddings,
         allow_dangerous_deserialization=True
     )
 
-    return vectorstore
 
+def retrieve_documents(question: str, k: int = 5):
+    """Retrieve relevant passages from indexed government sources."""
 
-def retrieve_documents(question: str, k: int = 3):
-    """Find relevant passages from government PDFs."""
-
-    if not question.strip():
+    if not question or not question.strip():
         raise ValueError("Please enter a question.")
 
     vectorstore = load_vectorstore()
 
-    documents = vectorstore.similarity_search(
-        question,
+    return vectorstore.similarity_search(
+        question.strip(),
         k=k
     )
 
-    return documents
+
+def get_source_details(document):
+    """Format source information without assuming every source is a PDF."""
+
+    metadata = document.metadata
+
+    source = (
+        metadata.get("source")
+        or metadata.get("title")
+        or metadata.get("source_name")
+        or "Unknown source"
+    )
+
+    page = metadata.get("page")
+
+    if page is not None:
+        return f"Source: {source}, Page: {page}"
+
+    return f"Source: {source}"
 
 
 def answer_question(question: str, language: str = "English"):
-    """Generate a grounded answer in the requested language."""
+    """Generate a grounded answer using retrieved government information."""
 
     if not OPENAI_API_KEY:
-        raise ValueError("OpenAI API key is missing. Check your .env file.")
+        raise ValueError(
+            "OpenAI API key is missing. Check your .env file."
+        )
+
+    if not question or not question.strip():
+        raise ValueError("Please enter a question.")
+
+    if language.lower() not in ["english", "tamil"]:
+        raise ValueError("Language must be English or Tamil.")
 
     llm = ChatOpenAI(
         model=LLM_MODEL,
@@ -64,58 +89,91 @@ def answer_question(question: str, language: str = "English"):
         temperature=0
     )
 
-    search_question = question
+    original_question = question.strip()
+    search_question = original_question
 
-    # Translate Tamil questions into English for document retrieval.
+    # Translate Tamil questions to English for retrieval.
     if language.lower() == "tamil":
         translation_prompt = f"""
-Translate the following Tamil question into clear English.
-Return only the translated question.
-Do not answer the question.
+Translate this Tamil question into clear English.
 
-Tamil question:
-{question}
+Return only the translated question.
+Do not answer it.
+
+Question:
+{original_question}
 """
         translated = llm.invoke(translation_prompt)
         search_question = translated.content.strip()
 
-    # Retrieve passages using the English search question.
-    documents = retrieve_documents(search_question, k=3)
+    # Retrieve relevant passages from the FAISS index.
+    documents = retrieve_documents(search_question, k=5)
 
     if not documents:
-        return "I could not find relevant information in the available documents."
-
-    context = ""
-
-    for doc in documents:
-        source = doc.metadata.get("source", "Unknown source")
-        page = doc.metadata.get("page", "Unknown page")
-
-        context += (
-            f"\nSource: {source}, Page: {page}\n"
-            f"{doc.page_content}\n"
+        if language.lower() == "tamil":
+            return "மன்னிக்கவும். கிடைக்கும் அரசு ஆவணங்களில் இதற்கான தகவல் இல்லை."
+        return (
+            "Sorry, I could not find relevant information "
+            "in the available government sources."
         )
 
+    # Build context and source references.
+    context_parts = []
+    source_references = []
+
+    for document in documents:
+        source_detail = get_source_details(document)
+
+        context_parts.append(
+            f"{source_detail}\n"
+            f"Content:\n{document.page_content}"
+        )
+
+        if source_detail not in source_references:
+            source_references.append(source_detail)
+
+    context = "\n\n".join(context_parts)
+    sources = "\n".join(
+        f"- {source}" for source in source_references
+    )
+
     prompt = f"""
-You are a helpful agricultural information assistant for farmers in Tamil Nadu.
+You are a reliable agricultural information assistant
+for farmers in Tamil Nadu.
 
-Answer the farmer's question using ONLY the government document content below.
+Answer the farmer's question using ONLY the government
+information provided in the context.
 
-Rules:
-1. Do not invent facts or scheme details.
-2. If the documents do not contain the answer, clearly say so.
+STRICT RULES:
+1. Never invent scheme details, eligibility, subsidies,
+   application dates, amounts or required documents.
+2. If the context does not contain the answer, clearly
+   state that the information is not available in the
+   indexed government sources.
 3. Respond in {language}.
-4. Keep the answer simple and easy for farmers to understand.
-5. Include the source document name and page number.
-6. Preserve important numbers, dates and amounts accurately.
+4. Use simple language that farmers can understand.
+5. Preserve numbers, dates, amounts and conditions accurately.
+6. Do not mix details from different schemes.
+7. Do not claim a farmer is eligible unless the source
+   explicitly supports that conclusion.
+8. Mention the relevant source name and page number
+   when a page number is available.
+9. If a source has no page number, cite its source name.
+10. Do not create citations that are not present in the context.
 
-Government document content:
+GOVERNMENT SOURCE CONTENT:
 {context}
 
-Farmer's original question:
-{question}
+AVAILABLE SOURCE REFERENCES:
+{sources}
+
+FARMER'S QUESTION:
+{original_question}
+
+Provide a clear and concise answer.
 """
 
     response = llm.invoke(prompt)
 
     return response.content
+PY
